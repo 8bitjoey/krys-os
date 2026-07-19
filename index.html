@@ -1,0 +1,497 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#000000">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-180.png">
+<title>KRYS-OS</title>
+<style>
+:root{--g:#39ff7a;--gd:#1a8f45;--bg:#020803;--warn:#ffcc44;--err:#ff5566;}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+html,body{margin:0;padding:0;background:var(--bg);color:var(--g);font-family:"Menlo","Courier New",monospace;height:100%;overflow:hidden;}
+#crt{position:fixed;inset:0;pointer-events:none;z-index:99;background:repeating-linear-gradient(0deg,rgba(0,0,0,.18) 0 1px,transparent 1px 3px);mix-blend-mode:multiply;}
+#app{height:100%;display:flex;flex-direction:column;padding:env(safe-area-inset-top) 10px env(safe-area-inset-bottom);}
+h1{font-size:16px;letter-spacing:3px;margin:10px 0 2px;text-shadow:0 0 8px var(--g);}
+.sub{font-size:10px;color:var(--gd);margin-bottom:8px;}
+#log{flex:1;overflow-y:auto;font-size:13px;line-height:1.55;padding:6px;border:1px solid #123a1f;background:rgba(0,20,6,.4);-webkit-overflow-scrolling:touch;}
+.m{margin:4px 0;white-space:pre-wrap;animation:fad .4s;}
+.m b{color:var(--warn);}
+.m.sys b{color:var(--gd);}
+.m.err{color:var(--err);}
+@keyframes fad{from{opacity:0;transform:translateY(4px)}to{opacity:1}}
+#bar{display:flex;gap:6px;margin:8px 0;}
+input,button{font-family:inherit;font-size:14px;}
+input[type=text],input[type=password]{flex:1;background:#00140a;border:1px solid var(--gd);color:var(--g);padding:10px;border-radius:4px;outline:none;min-width:0;}
+button{background:#062;background:linear-gradient(#0a3d1e,#052712);border:1px solid var(--g);color:var(--g);padding:10px 12px;border-radius:4px;text-transform:uppercase;letter-spacing:1px;cursor:pointer;}
+button:active{background:var(--g);color:#000;}
+button.ghost{border-color:var(--gd);color:var(--gd);}
+#tools{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;}
+#tools button{flex:1;font-size:11px;padding:8px 4px;}
+.ov{position:fixed;inset:0;background:rgba(1,6,2,.97);z-index:50;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:calc(14px + env(safe-area-inset-top)) 14px 14px;overflow-y:auto;}
+.ov h2{font-size:15px;letter-spacing:2px;margin:6px 0;text-align:center;}
+.ov p{font-size:12px;color:#9fdcb4;max-width:420px;text-align:center;line-height:1.5;}
+.xrow{width:100%;display:flex;justify-content:flex-end;}
+.xrow button{padding:6px 12px;}
+.big{font-size:22px;letter-spacing:6px;text-shadow:0 0 10px var(--g);}
+.blink{animation:bl 1s steps(2) infinite;}
+@keyframes bl{50%{opacity:.25}}
+/* login */
+#login{display:flex;flex-direction:column;justify-content:center;height:100%;max-width:380px;margin:0 auto;width:100%;}
+#login .row{margin:8px 0;display:flex;flex-direction:column;gap:4px;}
+#login label{font-size:11px;color:var(--gd);letter-spacing:2px;}
+.link{color:var(--warn);text-decoration:underline;font-size:12px;background:none;border:none;padding:8px 0;text-align:center;}
+#binbox{font-size:15px;letter-spacing:2px;text-align:center;margin:8px 0;color:var(--warn);word-spacing:8px;}
+table.alpha{margin:6px auto;border-collapse:collapse;font-size:10px;color:#9fdcb4;}
+table.alpha td{border:1px solid #123a1f;padding:2px 5px;}
+/* morse */
+#pad{width:200px;height:200px;border-radius:50%;border:2px solid var(--g);display:flex;align-items:center;justify-content:center;font-size:14px;letter-spacing:2px;margin:14px 0;user-select:none;-webkit-user-select:none;touch-action:none;box-shadow:0 0 30px #0f4;}
+#pad.on{background:var(--g);color:#000;}
+.mdisp{font-size:20px;min-height:28px;letter-spacing:3px;}
+.mbuf{font-size:24px;color:var(--warn);min-height:30px;}
+/* grids */
+.lo{display:grid;grid-template-columns:repeat(4,64px);gap:10px;margin:16px 0;}
+.lo div{width:64px;height:64px;border:1px solid var(--gd);border-radius:8px;display:flex;align-items:center;justify-content:center;background:#04160a;}
+.lo div span{display:block;width:44px;height:8px;background:var(--err);border-radius:3px;transition:transform .18s;box-shadow:0 0 8px var(--err);}
+.lo div.on span{transform:rotate(90deg);background:var(--g);box-shadow:0 0 8px var(--g);}
+/* mastermind */
+#mmlist{width:100%;max-width:320px;font-size:14px;}
+#mmlist div{display:flex;justify-content:space-between;border-bottom:1px dashed #123a1f;padding:4px 2px;}
+/* stress */
+.word{margin:10px 0;display:flex;gap:6px;justify-content:center;flex-wrap:wrap;}
+.word button{width:38px;height:44px;padding:0;font-size:18px;}
+.word button.v{border-color:var(--warn);color:var(--warn);}
+.word button.dis{opacity:.3;border-color:#123a1f;color:#456;}
+.code{font-size:26px;letter-spacing:10px;color:var(--warn);min-height:34px;margin:10px 0;}
+/* radar */
+#radarScope{width:240px;height:240px;border-radius:50%;border:2px solid var(--g);position:relative;margin:16px 0;background:radial-gradient(circle,#03270f 0%,#010b04 70%);box-shadow:0 0 40px #0f43 inset;}
+#radarScope::after{content:"";position:absolute;inset:0;border-radius:50%;background:conic-gradient(rgba(57,255,122,.25),transparent 40deg);animation:sweep 2.4s linear infinite;}
+@keyframes sweep{to{transform:rotate(360deg)}}
+#needle{position:absolute;left:50%;top:50%;width:0;height:0;transform-origin:center;font-size:44px;line-height:0;}
+#needle span{display:block;transform:translate(-50%,-50%);}
+#dist{font-size:24px;color:var(--warn);}
+/* canvases */
+canvas.game{border:1px solid var(--gd);background:#010b04;touch-action:none;max-width:100%;}
+video{display:none;}
+#scanview{width:100%;max-width:420px;border:1px solid var(--g);}
+/* map */
+.map div{font-size:12px;padding:6px 4px;border-bottom:1px dashed #123a1f;width:100%;max-width:380px;}
+.map .done{color:var(--gd);}
+.map .cur{color:var(--warn);}
+/* finale */
+.rat{filter:drop-shadow(0 0 14px #3f7);margin:10px 0;}
+#dbg{position:fixed;right:8px;bottom:8px;z-index:98;}
+.dbgpanel button{display:block;width:100%;margin:4px 0;font-size:11px;}
+.hidden{display:none!important;}
+</style>
+</head>
+<body>
+<div id="crt"></div>
+<div id="app"></div>
+<video id="vid" playsinline></video>
+<script src="lib/jsqr.js"></script>
+<script src="lib/three.min.js"></script>
+<script>
+'use strict';
+/* ================= CONFIG — правь тут ================= */
+const CONFIG={
+  agent:'AGENT_FEDYA',
+  password:'ЗЕРКАЛО',        // пароль входа (ответ двоичной загадки)
+  debugPass:'31337',          // пароль дебага
+  qrSwing:'KRYS:SWING',       // QR из двух половинок (терраса+качели)
+  qrCross:'KRYS:CROSSROAD',   // QR A4 у перекрёстка
+  codeWell:'КОЛОДЕЦ',         // ответ морского боя (парник)
+  codeAntenna:'АНТЕННА',      // код с записки у родника
+  codeMatch:'11',             // ответ задачи со спичками
+  morseAnswer:'ПАРНИК',       // слово для морзе-тапа
+  mmSecret:'4826',            // мастермайнд (4 разные цифры)
+  safeCode:'7319',            // код сейфа = цифры панорамы
+  dinoGoal:15,                // очков для файрвола
+  klen:  {lat:57.233006,lng:33.003814,r:5},    // старый клён (если радар не срабатывает на месте — подними до 10-15)
+  malina:{lat:57.240238,lng:32.982766,r:95},   // малиновое поле
+};
+/* ======================================================= */
+const $=s=>document.querySelector(s);
+const norm=s=>(s||'').trim().toUpperCase().replace(/Ё/g,'Е');
+let S=Object.assign({stage:-1,log:[]},JSON.parse(localStorage.getItem('krysS')||'{}'));
+const save=()=>localStorage.setItem('krysS',JSON.stringify(S));
+let fakeGPS=null; // debug
+/* ---------- sound ---------- */
+let AC=null;
+function snd(f,d=0.08,type='square',v=0.05){try{AC=AC||new (window.AudioContext||window.webkitAudioContext)();const o=AC.createOscillator(),g=AC.createGain();o.type=type;o.frequency.value=f;g.gain.value=v;o.connect(g);g.connect(AC.destination);o.start();g.gain.exponentialRampToValueAtTime(1e-4,AC.currentTime+d);o.stop(AC.currentTime+d);}catch(e){}}
+const ok=()=>{snd(660,.07);setTimeout(()=>snd(990,.12),80);};
+const bad=()=>{snd(160,.2,'sawtooth');};
+const blip=()=>snd(520,.03);
+/* ---------- stages meta ---------- */
+const STAGES=[
+ 'ВХОД: ПАРОЛЬ','СЛЕД: ЗЕРКАЛО → УКРЫТИЕ → БЕТОН','КАНАЛ СВЯЗИ: МОРЗЕ','МОРСКОЙ БОЙ → УЗЕЛ','ПЕЛЕНГ → ШЛЮЗ','ОРФОЭПИЯ','ИСТОЧНИК → КОД','РАДАР → ЦЕЛЬ','ЗАМОК НА ВОДЕ','АНОМАЛИЯ: МАЛИННИК','ФАЙРВОЛ','СЕЙФ','ПОСЫЛКА'];
+/* ---------- messages ---------- */
+function addMsg(who,txt,cls=''){S.log.push({who,txt,cls});if(S.log.length>200)S.log.shift();save();renderLog();}
+const krys=t=>{addMsg('К.Р.Ы.С.',t);snd(300,.05,'triangle');};
+const sys=t=>addMsg('СИСТЕМА',t,'sys');
+function renderLog(){const l=$('#log');if(!l)return;l.innerHTML=S.log.map(m=>`<div class="m ${m.cls}"><b>${m.who}&gt;</b> ${m.txt}</div>`).join('');l.scrollTop=l.scrollHeight;}
+/* ---------- screens ---------- */
+function renderLogin(forgot){
+ $('#app').innerHTML=`<div id="login">
+  <h1>KRYS-OS <span class="blink">▮</span></h1>
+  <div class="sub">v13.37 // управление перехвачено // несанкционированный доступ</div>
+  ${forgot?`
+   <p style="color:var(--warn);font-size:12px">АВАРИЙНОЕ ВОССТАНОВЛЕНИЕ ПАРОЛЯ<br>Перехвачен повреждённый пакет. Расшифруй — получишь пароль.</p>
+   <div id="binbox">01000 00110 10001 01011 00001 01100 01111</div>
+   <p style="font-size:11px">Справочник: каждая группа — двоичное число = номер буквы алфавита (без Ё).</p>
+   <table class="alpha"><tr>${'АБВГДЕЖЗ'.split('').map((c,i)=>`<td>${c}=${i+1}</td>`).join('')}</tr>
+   <tr>${'ИЙКЛМНОП'.split('').map((c,i)=>`<td>${c}=${i+9}</td>`).join('')}</tr>
+   <tr>${'РСТУФХЦЧ'.split('').map((c,i)=>`<td>${c}=${i+17}</td>`).join('')}</tr>
+   <tr>${'ШЩЪЫЬЭЮЯ'.split('').map((c,i)=>`<td>${c}=${i+25}</td>`).join('')}</tr></table>
+   <p style="font-size:11px;color:var(--gd)">Подсказка: 00001=1, 00010=2, 00100=4, 01000=8, 10000=16.</p>`:''}
+  <div class="row"><label>ЛОГИН</label><input type="text" value="${CONFIG.agent}" readonly></div>
+  <div class="row"><label>ПАРОЛЬ</label><input type="password" id="pw" autocomplete="off"></div>
+  <button id="go">ВОЙТИ</button>
+  <button class="link" id="forgot">Забыли пароль?</button>
+  <div class="sub" style="text-align:center">${navigator.standalone?'':'⚠ добавь меня на экран «Домой» (Safari → Поделиться)'}</div>
+ </div>`;
+ $('#go').onclick=()=>{const v=norm($('#pw').value);
+  if(v===CONFIG.debugPass){if(S.stage<0){S.stage=1;save();}renderTerminal();openDebug();return;}
+  if(v===norm(CONFIG.password)){ok();S.stage=Math.max(S.stage,1);if(!S.hello){S.hello=1;save();renderTerminal();intro();}else{save();renderTerminal();}}
+  else{bad();$('#pw').value='';$('#pw').placeholder='ДОСТУП ЗАПРЕЩЁН';}};
+ $('#forgot').onclick=()=>{blip();renderLogin(true);};
+}
+function intro(){
+ sys('Доступ восстановлен. Агент '+CONFIG.agent.replace('AGENT_','')+', добро пожаловать.');
+ krys('Ну привет, агент. Пока ты спал, я вынес твою ПОСЫЛКУ. Она уже спрятана там, где ты не найдёшь.');
+ krys('Хочешь вернуть — собери ключ из 4 цифр и открой мой сейф. Если мозгов хватит.');
+ krys('Первый след я оставил за тем, что каждое утро показывает тебе какого-то красавца. Странная штука, вечно всё переворачивает слева направо.');
+ sys('Найди записку. Дальше действуй по инструкциям на бумаге. Коды вводи здесь. Ключи-QR сканируй СКАНЕРОМ.');
+}
+function renderTerminal(){
+ $('#app').innerHTML=`
+  <h1>KRYS-OS <span style="font-size:10px;color:var(--gd)">// ${CONFIG.agent}</span></h1>
+  <div class="sub">этап ${Math.min(S.stage,12)}/12 — ${STAGES[Math.min(S.stage,12)]}</div>
+  <div id="log"></div>
+  <div id="bar"><input type="text" id="code" placeholder="ввести код…" autocomplete="off"><button id="send">→</button></div>
+  <div id="tools">
+   <button id="bScan">📷 сканер</button>
+   <button id="bSens">📡 сенсоры</button>
+   <button id="bRadar" class="${S.stage===7||S.stage===9?'':'ghost'}">🧭 радар</button>
+   <button id="bMap">🗺 карта</button>
+   ${S.stage===10?'<button id="bDino">⚡ файрвол</button>':''}
+   ${S.stage===11?'<button id="bSafe">🔐 сейф</button>':''}
+   ${S.stage>=12?'<button id="bFin">🎁 посылка</button>':''}
+  </div>`;
+ renderLog();
+ $('#send').onclick=()=>{const v=norm($('#code').value);$('#code').value='';if(v)submitCode(v);};
+ $('#code').addEventListener('keydown',e=>{if(e.key==='Enter')$('#send').click();});
+ $('#bScan').onclick=openScanner;
+ $('#bSens').onclick=askSensors;
+ $('#bRadar').onclick=()=>{if(S.stage===7)openRadar(CONFIG.klen,'klen');else if(S.stage===9)openRadar(CONFIG.malina,'malina');else sys('Радар не активирован.');};
+ $('#bMap').onclick=openMap;
+ const d=$('#bDino');if(d)d.onclick=openDino;
+ const sf=$('#bSafe');if(sf)sf.onclick=openSafe;
+ const f=$('#bFin');if(f)f.onclick=openFinale;
+}
+function advance(n){S.stage=n;save();renderTerminal();}
+/* ---------- code input ---------- */
+function submitCode(v){
+ addMsg('ТЫ',v);
+ if(v===CONFIG.debugPass){openDebug();return;}
+ if(S.stage===3&&v===norm(CONFIG.codeWell)){ok();krys('Верно, дырка с водой и эхом. Я оставил там свои расчёты. Реши их — узнаешь пеленг. Только шаги считай честно.');advance(4);return;}
+ if(S.stage===6&&v===norm(CONFIG.codeAntenna)){ok();krys('Код принят. Только вот беда: я обесточил антенну GPS. Почини вентили питания — все должны стать вертикальными. Тап переключает вентиль и его соседей. Ха.');openLightsOut();return;}
+ if(S.stage===8&&v===norm(CONFIG.codeMatch)){ok();krys('Спички детям не игрушка, а ты справился. Ладно. Финальная аномалия — там, где летом красные ягоды. Большое поле. Иди на радар, я жду.');advance(9);return;}
+ bad();
+ const taunts=['Неверно. Я почти разочарован.','Мимо. Может, позовёшь сестёр?','ОТКАЗ. Попробуй думать, это помогает.','Нет. Даже мои мыши умнее.'];
+ krys(taunts[Math.floor(Math.random()*taunts.length)]);
+}
+/* ---------- QR scanner ---------- */
+let scanRun=false;
+function openScanner(){
+ const ov=mkOv(`<h2>СКАНЕР КЛЮЧЕЙ</h2><p>Наведи на QR-код. Половинки совмещай ровно.</p><canvas id="scanview"></canvas><p id="scanmsg" class="blink">поиск…</p>`);
+ const vid=$('#vid'),cv=$('#scanview'),ctx=cv.getContext('2d');
+ navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}}).then(st=>{
+  vid.srcObject=st;vid.play();scanRun=true;
+  const loop=()=>{if(!scanRun){st.getTracks().forEach(t=>t.stop());return;}
+   if(vid.readyState===4){cv.width=vid.videoWidth;cv.height=vid.videoHeight;ctx.drawImage(vid,0,0);
+    const d=ctx.getImageData(0,0,cv.width,cv.height);const q=jsQR(d.data,cv.width,cv.height);
+    if(q&&q.data){scanRun=false;st.getTracks().forEach(t=>t.stop());closeOv();handleQR(q.data);return;}}
+   requestAnimationFrame(loop);};
+  loop();
+ }).catch(()=>{$('#scanmsg').textContent='нет доступа к камере — разреши в настройках Safari';});
+ ov.querySelector('.xrow button').addEventListener('click',()=>{scanRun=false;});
+}
+function handleQR(t){
+ if(t===CONFIG.qrSwing){
+  if(S.stage===1){ok();sys('Ключ БЕТОН/КАЧЕЛИ собран.');krys('Совместил половинки? Молодец, детский сад окончен. Теперь серьёзно: канал связи повреждён, отвечать можешь только МОРЗЕ.');openMorse();return;}
+  sys('Этот ключ уже использован.');return;}
+ if(t===CONFIG.qrCross){
+  if(S.stage===4){ok();sys('Узел ПЕРЕКРЁСТОК найден.');krys('Дошагал? Дальше — шлюз с кодовым замком. 4 цифры, все разные. После каждой попытки скажу: сколько цифр угадано вообще и сколько стоит на своём месте.');openMastermind();return;}
+  sys('Этот ключ уже использован.');return;}
+ bad();sys('Неопознанный код: '+t);
+}
+/* ---------- overlay helper ---------- */
+function mkOv(html,noX){const d=document.createElement('div');d.className='ov';d.innerHTML=(noX?'':'<div class="xrow"><button class="ghost">✕</button></div>')+html;document.body.appendChild(d);if(!noX)d.querySelector('.xrow button').onclick=()=>d.remove();return d;}
+function closeOv(){document.querySelectorAll('.ov').forEach(o=>o.remove());}
+/* ---------- MORSE tap (stage 2) ---------- */
+const MORSE={'.-':'А','-...':'Б','.--':'В','--.':'Г','-..':'Д','.':'Е','...-':'Ж','--..':'З','..':'И','.---':'Й','-.-':'К','.-..':'Л','--':'М','-.':'Н','---':'О','.--.':'П','.-.':'Р','...':'С','-':'Т','..-':'У','..-.':'Ф','....':'Х','-.-.':'Ц','---.':'Ч','----':'Ш','--.-':'Щ','-.--':'Ы','-..-':'Ь','..-..':'Э','..--':'Ю','.-.-':'Я'};
+function openMorse(){
+ advance(2);
+ const ov=mkOv(`<h2>КАНАЛ МОРЗЕ</h2>
+  <p>ВОПРОС: где на базе огурцы прячутся от заморозков?<br>Собери слово: <b style="color:var(--warn)">корень</b> из слова «ИСПАРИНА» + <b style="color:var(--warn)">суффикс</b> из слова «ЛЕСНИК».<br>Отстучи ответ: короткий тап — точка, длинный — тире. Пауза — конец буквы.</p>
+  <div class="mbuf" id="mbuf">&nbsp;</div>
+  <div id="pad">ДЕРЖИ / ОТПУСТИ</div>
+  <div class="mdisp" id="mout">&nbsp;</div>
+  <div style="display:flex;gap:8px"><button id="mres" class="ghost">сброс</button><button id="mhint" class="ghost">азбука</button><button id="mchk">передать</button></div>
+  <div id="mtable" class="hidden" style="font-size:11px;color:#9fdcb4;max-width:360px;margin-top:8px"></div>`);
+ $('#mtable').textContent=Object.entries(MORSE).map(([k,v])=>v+' '+k).join('   ');
+ let buf='',out='',t0=0,timer=null;
+ const pad=$('#pad');
+ const commit=()=>{if(!buf)return;out+=MORSE[buf]||'?';buf='';$('#mbuf').innerHTML='&nbsp;';$('#mout').textContent=out;};
+ const down=e=>{e.preventDefault();t0=Date.now();pad.classList.add('on');clearTimeout(timer);snd(700,.4,'sine',.04);};
+ const up=e=>{e.preventDefault();pad.classList.remove('on');const dt=Date.now()-t0;buf+=dt<230?'.':'-';$('#mbuf').textContent=buf;blip();timer=setTimeout(commit,700);};
+ pad.addEventListener('touchstart',down);pad.addEventListener('touchend',up);
+ pad.addEventListener('mousedown',down);pad.addEventListener('mouseup',up);
+ $('#mres').onclick=()=>{buf='';out='';$('#mbuf').innerHTML='&nbsp;';$('#mout').innerHTML='&nbsp;';};
+ $('#mhint').onclick=()=>$('#mtable').classList.toggle('hidden');
+ $('#mchk').onclick=()=>{commit();
+  if(norm(out)===norm(CONFIG.morseAnswer)){ok();ov.remove();krys('Стучишь сносно. Следующий узел — ровно там, где твой ответ. Ищи бумагу среди ботвы.');advance(3);}
+  else{bad();krys('Передача не принята: «'+out+'». Стучи внятнее.');}};
+}
+/* ---------- MASTERMIND (stage 4→5) ---------- */
+function openMastermind(){
+ const ov=mkOv(`<h2>ШЛЮЗ: КОДОВЫЙ ЗАМОК</h2>
+  <p>4 цифры, все разные. «НА МЕСТЕ» — цифра угадана и стоит верно. «ЕСТЬ» — цифра в коде, но не там.</p>
+  <div style="display:flex;gap:8px;margin:10px 0"><input type="text" id="mmIn" inputmode="numeric" maxlength="4" placeholder="0000" style="width:120px;text-align:center;font-size:22px;letter-spacing:6px"><button id="mmGo">ВЗЛОМ</button></div>
+  <div id="mmlist"></div>`);
+ $('#mmGo').onclick=()=>{
+  const g=$('#mmIn').value;$('#mmIn').value='';
+  if(!/^\d{4}$/.test(g)){bad();return;}
+  const s=CONFIG.mmSecret;let bulls=0,cows=0;
+  for(let i=0;i<4;i++){if(g[i]===s[i])bulls++;else if(s.includes(g[i]))cows++;}
+  blip();
+  $('#mmlist').insertAdjacentHTML('afterbegin',`<div><span>${g}</span><span>на месте: ${bulls} · есть: ${cows}</span></div>`);
+  if(bulls===4){ok();setTimeout(()=>{ov.remove();krys('Шлюз пал. Хм. Ладно, грамотей, следующий рубеж — русский язык. Ударь по ударениям.');openStress();},400);}
+ };
+}
+/* ---------- STRESS / ударения (stage 5→6) ---------- */
+const UD=[{w:'ЗВОНИТ',i:4},{w:'ТОРТЫ',i:1},{w:'КРАСИВЕЕ',i:4},{w:'ЩАВЕЛЬ',i:3},{w:'КАТАЛОГ',i:5},{w:'ДОСУГ',i:3}];
+function openStress(){
+ advance(5);
+ const ov=mkOv(`<h2>ОРФОЭПИЯ</h2><p>Тапни УДАРНУЮ гласную в каждом слове. Каждое верное ударение открывает букву места.</p><div id="wbox"></div><div class="code" id="ucode"></div>`);
+ const target='РОДНИК';let k=0;
+ const draw=()=>{
+  $('#ucode').textContent=target.slice(0,k)+'·'.repeat(target.length-k);
+  if(k>=UD.length){setTimeout(()=>{ov.remove();ok();krys('РОДНИК. Вода из-под земли. Их тут, я слышал, два. Который выбрал я — не скажу. Крути педали.');advance(6);},700);return;}
+  const {w,i}=UD[k];
+  $('#wbox').innerHTML='<div class="word">'+w.split('').map((c,j)=>{
+   const vow='АЕИОУЫЭЮЯЁ'.includes(c);
+   return `<button data-j="${j}" class="${vow?'v':'dis'}" ${vow?'':'disabled'}>${c}</button>`;}).join('')+'</div>';
+  $('#wbox').querySelectorAll('button.v').forEach(b=>b.onclick=()=>{
+   if(+b.dataset.j===i){ok();k++;draw();}
+   else{bad();krys(['звонИт, а не звОнит… ой, это не то слово. Мимо!','Так говорят только двоечники.','Неверно. Словарь в помощь.'][Math.floor(Math.random()*3)]);}});
+ };
+ draw();
+}
+/* ---------- LIGHTS OUT (stage 6→7) ---------- */
+function openLightsOut(){
+ let st;
+ do{st=Array(16).fill(true);for(let n=0;n<7;n++)press(st,Math.floor(Math.random()*16));}while(st.every(x=>x));
+ function press(a,i){const r=Math.floor(i/4),c=i%4;[[r,c],[r-1,c],[r+1,c],[r,c-1],[r,c+1]].forEach(([y,x])=>{if(y>=0&&y<4&&x>=0&&x<4)a[y*4+x]=!a[y*4+x];});}
+ const ov=mkOv(`<h2>ПИТАНИЕ АНТЕННЫ</h2><p>Все вентили — в вертикаль. Тап переключает вентиль и соседей по кресту.</p><div class="lo" id="lo"></div>`);
+ const draw=()=>{$('#lo').innerHTML=st.map((v,i)=>`<div class="${v?'on':''}" data-i="${i}"><span></span></div>`).join('');
+  $('#lo').querySelectorAll('div[data-i]').forEach(d=>d.onclick=()=>{blip();press(st,+d.dataset.i);draw();
+   if(st.every(x=>x)){ok();setTimeout(()=>{ov.remove();krys('Антенна в строю. Лови сигнал: я пометил одно СТАРОЕ дерево. Радар доведёт. Открывай 🧭 и иди по стрелке.');advance(7);},400);}});};
+ draw();
+}
+/* ---------- GEO / RADAR ---------- */
+let watchId=null,lastPos=null,heading=null;
+function askSensors(){
+ if(navigator.geolocation)navigator.geolocation.getCurrentPosition(p=>{lastPos=p.coords;sys('GPS активен ✓');startWatch();},()=>sys('GPS: доступ запрещён. Настройки → Safari → Геопозиция.'),{enableHighAccuracy:true});
+ if(window.DeviceOrientationEvent&&DeviceOrientationEvent.requestPermission){DeviceOrientationEvent.requestPermission().then(r=>{if(r==='granted'){listenOrient();sys('Гироскоп/компас активен ✓');}}).catch(()=>{});}
+ else listenOrient();
+}
+let orientData=null;
+function listenOrient(){window.addEventListener('deviceorientation',e=>{orientData=e;if(typeof e.webkitCompassHeading==='number')heading=e.webkitCompassHeading;},true);}
+function startWatch(){if(watchId!=null)return;watchId=navigator.geolocation.watchPosition(p=>{lastPos=p.coords;},()=>{},{enableHighAccuracy:true,maximumAge:2000});}
+function pos(){return fakeGPS||lastPos;}
+function distBear(a,b){const R=6371000,r=x=>x*Math.PI/180;const φ1=r(a.latitude),φ2=r(b.lat),Δφ=r(b.lat-a.latitude),Δλ=r(b.lng-a.longitude);
+ const h=Math.sin(Δφ/2)**2+Math.cos(φ1)*Math.cos(φ2)*Math.sin(Δλ/2)**2;const d=2*R*Math.asin(Math.sqrt(h));
+ const y=Math.sin(Δλ)*Math.cos(φ2),x=Math.cos(φ1)*Math.sin(φ2)-Math.sin(φ1)*Math.cos(φ2)*Math.cos(Δλ);
+ return{d,b:(Math.atan2(y,x)*180/Math.PI+360)%360};}
+function openRadar(target,kind){
+ startWatch();
+ const ov=mkOv(`<h2>РАДАР</h2><div id="radarScope"><div id="needle"><span>▲</span></div></div><div id="dist">—</div><p id="rmsg">Жду сигнал GPS… (нажми «сенсоры», если не просил разрешение)</p><div id="rbtn"></div>`);
+ let done=false;
+ const tick=()=>{if(!document.body.contains(ov))return;
+  const p=pos();
+  if(p){const {d,b}=distBear(p,target);
+   $('#dist').textContent=d>999?(d/1000).toFixed(2)+' км':Math.round(d)+' м';
+   const rot=heading!=null?b-heading:b;
+   $('#needle').style.transform=`rotate(${rot}deg)`;
+   $('#rmsg').textContent=heading!=null?'стрелка ведёт к цели':'компас недоступен: стрелка = азимут, север сверху';
+   if(!done&&d<=target.r){done=true;ok();
+    if(kind==='klen'){krys('Точка достигнута. Осмотри дерево. Внимательно.');advance(8);setTimeout(()=>ov.remove(),1500);}
+    else{$('#rmsg').textContent='АНОМАЛИЯ РЯДОМ';$('#rbtn').innerHTML='<button id="pano">АКТИВИРОВАТЬ ЦИФРОВОЕ ЗРЕНИЕ</button>';$('#pano').onclick=()=>{ov.remove();openPanorama();};}}
+  }
+  setTimeout(tick,600);};
+ tick();
+}
+/* ---------- PANORAMA 3D (stage 9→10) ---------- */
+function openPanorama(){
+ const ov=mkOv(`<h2>ЦИФРОВОЕ ЗРЕНИЕ</h2><p>Крутись на месте вместе с телефоном. Вокруг висят 4 маркера: ①②③④. Запиши цифры по порядку — это код сейфа.</p><canvas id="pc" class="game"></canvas><button id="pdone" style="margin-top:10px">ЦИФРЫ ЗАПИСАНЫ</button>`,false);
+ const cv=$('#pc');cv.width=Math.min(innerWidth-30,420);cv.height=Math.round(cv.width*1.25);
+ const ren=new THREE.WebGLRenderer({canvas:cv,antialias:true});ren.setPixelRatio(devicePixelRatio);
+ const sc=new THREE.Scene();sc.fog=new THREE.Fog(0x020803,10,60);sc.background=new THREE.Color(0x020803);
+ const cam=new THREE.PerspectiveCamera(70,cv.width/cv.height,.1,100);
+ sc.add(new THREE.GridHelper(80,40,0x115522,0x0a2a14));
+ const pts=new THREE.Points(new THREE.BufferGeometry().setAttribute('position',new THREE.Float32BufferAttribute(Array.from({length:900},()=> (Math.random()-0.5)*80),3)),new THREE.PointsMaterial({color:0x1a8f45,size:.15}));sc.add(pts);
+ const digits=CONFIG.safeCode.split('');
+ const marks='①②③④';
+ digits.forEach((d,i)=>{
+  const c=document.createElement('canvas');c.width=256;c.height=128;const x=c.getContext('2d');
+  x.fillStyle='#39ff7a';x.font='bold 90px monospace';x.textAlign='center';x.shadowColor='#39ff7a';x.shadowBlur=20;
+  x.fillText(marks[i]+' '+d,128,95);
+  const sp=new THREE.Sprite(new THREE.SpriteMaterial({map:new THREE.CanvasTexture(c),transparent:true}));
+  const a=(30+i*90)*Math.PI/180,r=12;
+  sp.position.set(r*Math.sin(a),[0,3,-2,4][i],-r*Math.cos(a));sp.scale.set(6,3,1);sc.add(sp);});
+ // device orientation → camera quaternion (по мотивам DeviceOrientationControls, MIT)
+ const zee=new THREE.Vector3(0,0,1),eul=new THREE.Euler(),q0=new THREE.Quaternion(),q1=new THREE.Quaternion(-Math.sqrt(.5),0,0,Math.sqrt(.5));
+ let hadOrient=false,dragX=0,dragY=0,px=0,py=0,drag=false;
+ cv.addEventListener('touchstart',e=>{drag=true;px=e.touches[0].clientX;py=e.touches[0].clientY;});
+ cv.addEventListener('touchmove',e=>{if(!drag)return;dragX+=(e.touches[0].clientX-px)*.005;dragY+=(e.touches[0].clientY-py)*.005;px=e.touches[0].clientX;py=e.touches[0].clientY;e.preventDefault();},{passive:false});
+ cv.addEventListener('touchend',()=>drag=false);
+ const loop=()=>{if(!document.body.contains(ov))return;
+  const e=orientData;
+  if(e&&e.alpha!=null){hadOrient=true;
+   const o=(screen.orientation&&screen.orientation.angle||window.orientation||0)*Math.PI/180;
+   eul.set(e.beta*Math.PI/180,e.alpha*Math.PI/180,-e.gamma*Math.PI/180,'YXZ');
+   cam.quaternion.setFromEuler(eul);cam.quaternion.multiply(q1);cam.quaternion.multiply(q0.setFromAxisAngle(zee,-o));}
+  if(!hadOrient){cam.rotation.set(dragY,-dragX,0,'YXZ');}
+  pts.rotation.y+=.0004;
+  ren.render(sc,cam);requestAnimationFrame(loop);};
+ loop();
+ $('#pdone').onclick=()=>{ov.remove();ok();krys('Собрал? Хорошо. Возвращайся на БАЗУ. Между тобой и сейфом — мой файрвол. Удачи, она тебе понадобится.');advance(10);};
+}
+/* ---------- DINO / firewall (stage 10→11) ---------- */
+function openDino(){
+ const ov=mkOv(`<h2>ФАЙРВОЛ</h2><p>Тапай — прыжок. Перепрыгни ${CONFIG.dinoGoal} пакетов защиты.</p><canvas id="dc" class="game"></canvas><p id="dscore">0</p>`);
+ const cv=$('#dc');cv.width=Math.min(innerWidth-30,460);cv.height=200;const x=cv.getContext('2d');
+ let py=160,vy=0,obs=[],frame=0,score=0,speed=4.5,alive=true;
+ const jump=()=>{if(py>=160){vy=-11;snd(880,.05);}};
+ cv.addEventListener('touchstart',e=>{e.preventDefault();jump();},{passive:false});
+ cv.addEventListener('mousedown',jump);
+ const loop=()=>{if(!document.body.contains(ov))return;
+  frame++;x.fillStyle='#010b04';x.fillRect(0,0,cv.width,cv.height);
+  x.strokeStyle='#1a8f45';x.beginPath();x.moveTo(0,182);x.lineTo(cv.width,182);x.stroke();
+  vy+=.6;py=Math.min(160,py+vy);
+  x.fillStyle='#39ff7a';x.shadowColor='#39ff7a';x.shadowBlur=8;x.fillRect(40,py,20,22);x.shadowBlur=0;
+  if(frame%Math.max(45,90-score*2)===0)obs.push({x:cv.width,w:12+Math.random()*10,h:26+Math.random()*22,passed:false});
+  x.fillStyle='#ff5566';
+  obs.forEach(o=>{o.x-=speed;x.fillRect(o.x,182-o.h,o.w,o.h);
+   if(!o.passed&&o.x+o.w<40){o.passed=true;score++;$('#dscore').textContent=score;blip();}
+   if(o.x<60&&o.x+o.w>40&&py+22>182-o.h){alive=false;}});
+  obs=obs.filter(o=>o.x>-30);
+  if(score>=CONFIG.dinoGoal){ok();ov.remove();krys('НЕВОЗМОЖНО. Мой файрвол… Ладно. Вот сейф. Код-то знаешь? Ну-ну. Крути диск, фиксируй цифры.');advance(11);return;}
+  if(!alive){bad();score=0;obs=[];py=160;vy=0;alive=true;$('#dscore').textContent='0 (сбит! заново)';}
+  requestAnimationFrame(loop);};
+ loop();
+}
+/* ---------- SAFE dial (stage 11→12) ---------- */
+function openSafe(){
+ const ov=mkOv(`<h2>СЕЙФ К.Р.Ы.С.</h2><p>Крути диск пальцем. Цифра под меткой ▼ — текущая. «ЗАФИКСИРОВАТЬ» вводит её.</p>
+ <div class="code" id="slots">····</div>
+ <div style="font-size:22px;color:var(--warn)">▼</div>
+ <canvas id="sd" class="game" width="280" height="280" style="border-radius:50%"></canvas>
+ <button id="sfix" style="margin-top:10px">ЗАФИКСИРОВАТЬ</button>`);
+ const cv=$('#sd'),x=cv.getContext('2d');let rot=0,entered=[];
+ const draw=()=>{x.clearRect(0,0,280,280);x.save();x.translate(140,140);
+  const g=x.createRadialGradient(0,0,40,0,0,140);g.addColorStop(0,'#0c2f18');g.addColorStop(1,'#031008');
+  x.fillStyle=g;x.beginPath();x.arc(0,0,132,0,7);x.fill();
+  x.strokeStyle='#39ff7a';x.lineWidth=3;x.beginPath();x.arc(0,0,132,0,7);x.stroke();
+  x.rotate(rot);
+  for(let i=0;i<10;i++){x.save();x.rotate(i*Math.PI/5);x.fillStyle='#39ff7a';x.font='bold 26px monospace';x.textAlign='center';x.fillText(i,0,-100);x.strokeStyle='#1a8f45';x.beginPath();x.moveTo(0,-128);x.lineTo(0,-118);x.stroke();x.restore();}
+  x.fillStyle='#062';x.beginPath();x.arc(0,0,46,0,7);x.fill();x.strokeStyle='#39ff7a';x.stroke();
+  x.restore();};
+ draw();
+ let pa=null;
+ const ang=e=>{const r=cv.getBoundingClientRect(),t=e.touches?e.touches[0]:e;return Math.atan2(t.clientY-r.top-140,t.clientX-r.left-140);};
+ const mv=e=>{if(pa==null)return;const a=ang(e);rot+=a-pa;pa=a;draw();e.preventDefault();};
+ cv.addEventListener('touchstart',e=>{pa=ang(e);snd(200,.02);});
+ cv.addEventListener('touchmove',mv,{passive:false});
+ cv.addEventListener('touchend',()=>pa=null);
+ cv.addEventListener('mousedown',e=>pa=ang(e));
+ cv.addEventListener('mousemove',mv);
+ cv.addEventListener('mouseup',()=>pa=null);
+ const topDigit=()=>{let d=Math.round(-rot/(Math.PI/5))%10;return (d+10)%10;};
+ $('#sfix').onclick=()=>{entered.push(topDigit());snd(440,.06);
+  $('#slots').textContent=entered.join('')+'·'.repeat(4-entered.length);
+  if(entered.length===4){
+   if(entered.join('')===CONFIG.safeCode){ok();setTimeout(()=>{ov.remove();advance(12);openFinale();},500);}
+   else{bad();entered=[];$('#slots').textContent='····';krys('Не тот код. Кто-то плохо смотрел по сторонам в малиннике.');}}};
+}
+/* ---------- FINALE ---------- */
+function openFinale(){
+ mkOv(`<h2 style="color:var(--warn)">ЛИЧНОСТЬ НАРУШИТЕЛЯ УСТАНОВЛЕНА</h2>
+ <svg class="rat" width="220" height="180" viewBox="0 0 220 180">
+  <circle cx="60" cy="45" r="26" fill="#0a3d1e" stroke="#39ff7a"/>
+  <circle cx="160" cy="45" r="26" fill="#0a3d1e" stroke="#39ff7a"/>
+  <ellipse cx="110" cy="105" rx="72" ry="60" fill="#0a3d1e" stroke="#39ff7a" stroke-width="2"/>
+  <rect x="52" y="82" width="50" height="24" rx="6" fill="#000" stroke="#39ff7a"/>
+  <rect x="118" y="82" width="50" height="24" rx="6" fill="#000" stroke="#39ff7a"/>
+  <line x1="102" y1="92" x2="118" y2="92" stroke="#39ff7a" stroke-width="3"/>
+  <ellipse cx="110" cy="132" rx="9" ry="6" fill="#39ff7a"/>
+  <g stroke="#39ff7a" stroke-width="1.5">
+   <line x1="98" y1="130" x2="30" y2="118"/><line x1="98" y1="136" x2="28" y2="140"/><line x1="98" y1="142" x2="34" y2="160"/>
+   <line x1="122" y1="130" x2="190" y2="118"/><line x1="122" y1="136" x2="192" y2="140"/><line x1="122" y1="142" x2="186" y2="160"/>
+  </g>
+  <path d="M96 148 Q110 158 124 148" stroke="#39ff7a" fill="none" stroke-width="2"/>
+ </svg>
+ <p class="big">К.Р.Ы.С.</p>
+ <p>«Крайне Разумная Ыскусственная Система»<br>Особые приметы: усы, тёмные очки, наглость.<br>Сообщники: два усатых киллера (отрицают всё).</p>
+ <p style="color:var(--warn);font-size:15px">КОНФИСКОВАННАЯ ПОСЫЛКА ОБНАРУЖЕНА:<br><span class="big">▶ ЧЕРДАК ◀</span></p>
+ <p>Забирай, агент. Ты победил.<br><b style="color:var(--g)">С ДНЁМ РОЖДЕНИЯ! 🎂</b></p>`,false);
+ for(let i=0;i<8;i++)setTimeout(()=>snd(400+Math.random()*800,.15,'sine',.06),i*130);
+}
+/* ---------- MAP ---------- */
+function openMap(){
+ mkOv(`<h2>КАРТА ОПЕРАЦИИ</h2><div class="map">${STAGES.map((t,i)=>`<div class="${i<S.stage?'done':i===S.stage?'cur blink':''}">${i<S.stage?'▣':i===S.stage?'▶':'□'} ${i<=S.stage?t:'▒▒▒▒▒▒▒▒'}</div>`).join('')}</div>`);
+}
+/* ---------- DEBUG ---------- */
+function openDebug(){
+ const ov=mkOv(`<h2 style="color:var(--err)">DEBUG // РОДИТЕЛЬСКИЙ РЕЖИМ</h2><div class="dbgpanel" style="width:100%;max-width:340px">
+  <select id="dstage" style="width:100%;padding:8px;background:#00140a;color:var(--g);border:1px solid var(--gd)">${STAGES.map((t,i)=>`<option value="${i}" ${i===S.stage?'selected':''}>${i}: ${t}</option>`).join('')}</select>
+  <button id="dgo">перейти на этап</button>
+  <button id="dqr1">скан: SWING (качели)</button>
+  <button id="dqr2">скан: CROSSROAD (перекрёсток)</button>
+  <button id="dgps1">GPS: я у клёна</button>
+  <button id="dgps2">GPS: я в малиннике</button>
+  <button id="dgps0">GPS: реальный</button>
+  <button id="dsolve">решить текущую мини-игру</button>
+  <button id="dans">показать все ответы</button>
+  <button id="dreset" style="border-color:var(--err);color:var(--err)">сбросить прогресс</button>
+  <div id="dansbox" style="font-size:11px;color:#9fdcb4;margin-top:8px"></div></div>`);
+ $('#dgo').onclick=()=>{S.hello=1;advance(+$('#dstage').value);ov.remove();};
+ $('#dqr1').onclick=()=>{ov.remove();handleQR(CONFIG.qrSwing);};
+ $('#dqr2').onclick=()=>{ov.remove();handleQR(CONFIG.qrCross);};
+ $('#dgps1').onclick=()=>{fakeGPS={latitude:CONFIG.klen.lat,longitude:CONFIG.klen.lng};sys('DEBUG: GPS=клён');};
+ $('#dgps2').onclick=()=>{fakeGPS={latitude:CONFIG.malina.lat,longitude:CONFIG.malina.lng};sys('DEBUG: GPS=малинник');};
+ $('#dgps0').onclick=()=>{fakeGPS=null;sys('DEBUG: GPS реальный');};
+ $('#dsolve').onclick=()=>{ov.remove();
+  if(S.stage===2){closeOv();krys('[debug] морзе пройдено');advance(3);}
+  else if(S.stage===4){closeOv();openStress();}
+  else if(S.stage===5){closeOv();advance(6);}
+  else if(S.stage===6){closeOv();advance(7);}
+  else if(S.stage===9){closeOv();krys('[debug] панорама пройдена');advance(10);}
+  else if(S.stage===10){closeOv();advance(11);}
+  else if(S.stage===11){closeOv();advance(12);openFinale();}
+  else sys('DEBUG: на этом этапе нет мини-игры (двигай этап).');};
+ $('#dans').onclick=()=>{$('#dansbox').innerHTML=`пароль: ${CONFIG.password}<br>морзе: ${CONFIG.morseAnswer}<br>морской бой: ${CONFIG.codeWell}<br>азимут: 240°, 35 шагов<br>мастермайнд: ${CONFIG.mmSecret}<br>ударения: РОДНИК<br>код родника: ${CONFIG.codeAntenna}<br>спички: XI+I=X → X+I=XI → код ${CONFIG.codeMatch}<br>сейф/панорама: ${CONFIG.safeCode}`;};
+ $('#dreset').onclick=()=>{localStorage.removeItem('krysS');location.reload();};
+}
+/* ---------- boot ---------- */
+if('serviceWorker' in navigator&&location.protocol==='https:')navigator.serviceWorker.register('sw.js');
+document.addEventListener('touchstart',()=>{if(!AC)snd(1,.01,'sine',.001);},{once:true});
+if(S.stage<0)renderLogin(false);else renderTerminal();
+</script>
+</body>
+</html>
