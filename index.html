@@ -462,8 +462,9 @@ function openDebug(){
  closeOv();
  const HINTS={1:'жду скан SWING (кнопка ниже или сложенный QR)',2:'мини-игра МОРЗЕ',3:'жду код КОЛОДЕЦ',4:'жду скан CROSSROAD (кнопка ниже)',5:'мини-игра УДАРЕНИЯ',6:'жду код АНТЕННА',7:'радар активен → цель: клён',8:'жду код со спичек (11)',9:'радар активен → цель: малинник',10:'кнопка ⚡ файрвол в терминале',11:'кнопка 🔐 сейф в терминале',12:'финал — кнопка 🎁'};
  const ov=mkOv(`<h2 style="color:var(--err)">DEBUG // РОДИТЕЛЬСКИЙ РЕЖИМ</h2><div class="dbgpanel" style="width:100%;max-width:340px">
-  <select id="dstage" style="width:100%;padding:8px;background:#00140a;color:var(--g);border:1px solid var(--gd)">${STAGES.map((t,i)=>`<option value="${i}" ${i===S.stage?'selected':''}>${i}: ${t}</option>`).join('')}</select>
-  <button id="dgo">перейти на этап</button>
+  <div style="font-size:10px;color:var(--gd);margin:4px 0">ПЕРЕЙТИ НА ЭТАП (тап по строке):</div>
+  <div id="dstages">${STAGES.map((t,i)=>`<button data-n="${i}" style="text-align:left;${i===S.stage?'border-color:var(--warn);color:var(--warn)':''}">${i===S.stage?'▶':''} ${i}: ${t}</button>`).join('')}</div>
+  <div style="font-size:10px;color:var(--gd);margin:8px 0 4px">ИНСТРУМЕНТЫ:</div>
   <button id="dqr1">скан: SWING (качели)</button>
   <button id="dqr2">скан: CROSSROAD (перекрёсток)</button>
   <button id="dgps1">GPS: я у клёна</button>
@@ -473,10 +474,10 @@ function openDebug(){
   <button id="dans">показать все ответы</button>
   <button id="dreset" style="border-color:var(--err);color:var(--err)">сбросить прогресс</button>
   <div id="dansbox" style="font-size:11px;color:#9fdcb4;margin-top:8px"></div></div>`);
- $('#dgo').onclick=()=>{const n=+$('#dstage').value;ov.remove();S.hello=1;
+ ov.querySelectorAll('#dstages button').forEach(b=>b.onclick=()=>{const n=+b.dataset.n;ov.remove();S.hello=1;
   if(n===2){renderTerminal();openMorse();return;}
   if(n===5){renderTerminal();openStress();return;}
-  advance(n);sys('DEBUG: переход на этап '+n+' — '+STAGES[n]+'. '+(HINTS[n]||''));};
+  advance(n);sys('DEBUG: переход на этап '+n+' — '+STAGES[n]+'. '+(HINTS[n]||''));});
  $('#dqr1').onclick=()=>{ov.remove();handleQR(CONFIG.qrSwing);};
  $('#dqr2').onclick=()=>{ov.remove();handleQR(CONFIG.qrCross);};
  $('#dgps1').onclick=()=>{fakeGPS={latitude:CONFIG.klen.lat,longitude:CONFIG.klen.lng};sys('DEBUG: GPS=клён');};
