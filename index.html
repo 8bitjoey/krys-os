@@ -148,10 +148,9 @@ function renderLogin(forgot){
    <tr>${'ШЩЪЫЬЭЮЯ'.split('').map((c,i)=>`<td>${c}=${i+25}</td>`).join('')}</tr></table>
    <p style="font-size:11px;color:var(--gd)">Подсказка: 00001=1, 00010=2, 00100=4, 01000=8, 10000=16.</p>`:''}
   <div class="row"><label>ЛОГИН</label><input type="text" value="${CONFIG.agent}" readonly></div>
-  <div class="row"><label>ПАРОЛЬ</label><input type="password" id="pw" autocomplete="off"></div>
+  <div class="row"><label>ПАРОЛЬ</label><input type="text" id="pw" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" style="-webkit-text-security:disc;text-security:disc"></div>
   <button id="go">ВОЙТИ</button>
   <button class="link" id="forgot">Забыли пароль?</button>
-  <div class="sub" style="text-align:center">${navigator.standalone?'':'⚠ добавь меня на экран «Домой» (Safari → Поделиться)'}</div>
  </div>`;
  $('#go').onclick=()=>{const v=norm($('#pw').value);
   if(v===CONFIG.debugPass){if(S.stage<0){S.stage=1;save();}renderTerminal();openDebug();return;}
