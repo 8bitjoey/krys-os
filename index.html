@@ -105,7 +105,7 @@ const CONFIG={
   qrCross:'KRYS:CROSSROAD',   // QR A4 у перекрёстка
   codeWell:'КОЛОДЕЦ',         // ответ морского боя (парник)
   codeAntenna:'АНТЕННА',      // код с записки у родника
-  codeMatch:'11',             // ответ задачи со спичками
+  codeMatch:'51181',          // ответ задачи со спичками (508, переложить 2)
   morseAnswer:'ПАРНИК',       // слово для морзе-тапа
   mmSecret:'4826',            // мастермайнд (4 разные цифры)
   safeCode:'7319',            // код сейфа = цифры панорамы
@@ -489,7 +489,7 @@ function openDebug(){
   else if(S.stage===10){closeOv();advance(11);}
   else if(S.stage===11){closeOv();advance(12);openFinale();}
   else sys('DEBUG: на этом этапе нет мини-игры (двигай этап).');};
- $('#dans').onclick=()=>{$('#dansbox').innerHTML=`пароль: ${CONFIG.password}<br>морзе: ${CONFIG.morseAnswer}<br>морской бой: ${CONFIG.codeWell}<br>азимут: 240°, 35 шагов<br>мастермайнд: ${CONFIG.mmSecret}<br>ударения: РОДНИК<br>код родника: ${CONFIG.codeAntenna}<br>спички: XI+I=X → X+I=XI → код ${CONFIG.codeMatch}<br>сейф/панорама: ${CONFIG.safeCode}`;};
+ $('#dans').onclick=()=>{$('#dansbox').innerHTML=`пароль: ${CONFIG.password}<br>морзе: ${CONFIG.morseAnswer}<br>морской бой: ${CONFIG.codeWell}<br>азимут: 240°, 35 шагов<br>мастермайнд: ${CONFIG.mmSecret}<br>ударения: РОДНИК<br>код родника: ${CONFIG.codeAntenna}<br>спички: 508 → ${CONFIG.codeMatch} (верх и низ нуля → единица после 8)<br>сейф/панорама: ${CONFIG.safeCode}`;};
  $('#dreset').onclick=()=>{localStorage.removeItem('krysS');location.reload();};
 }
 /* ---------- boot ---------- */
