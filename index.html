@@ -70,8 +70,11 @@ table.alpha td{border:1px solid #123a1f;padding:2px 5px;}
 #radarScope{width:240px;height:240px;border-radius:50%;border:2px solid var(--g);position:relative;margin:16px 0;background:radial-gradient(circle,#03270f 0%,#010b04 70%);box-shadow:0 0 40px #0f43 inset;}
 #radarScope::after{content:"";position:absolute;inset:0;border-radius:50%;background:conic-gradient(rgba(57,255,122,.25),transparent 40deg);animation:sweep 2.4s linear infinite;}
 @keyframes sweep{to{transform:rotate(360deg)}}
-#needle{position:absolute;left:50%;top:50%;width:0;height:0;transform-origin:center;font-size:44px;line-height:0;}
-#needle span{display:block;transform:translate(-50%,-50%);}
+#needle{position:absolute;left:50%;top:50%;width:60px;height:140px;margin:-70px 0 0 -30px;transform-origin:50% 50%;filter:drop-shadow(0 0 6px #3f7);}
+.lamps{display:grid;grid-template-columns:repeat(4,64px);gap:10px;justify-items:center;margin:6px 0;}
+.lamp{width:30px;height:30px;border-radius:50%;border:1px solid var(--gd);background:#04160a;transition:.2s;}
+.lamp.lit{background:var(--g);box-shadow:0 0 20px var(--g);}
+.src{color:var(--warn);font-size:20px;}
 #dist{font-size:24px;color:var(--warn);}
 /* canvases */
 canvas.game{border:1px solid var(--gd);background:#010b04;touch-action:none;max-width:100%;}
@@ -103,10 +106,10 @@ const CONFIG={
   debugPass:'31337',          // пароль дебага
   qrSwing:'KRYS:SWING',       // QR из двух половинок (терраса+качели)
   qrCross:'KRYS:CROSSROAD',   // QR A4 у перекрёстка
-  codeWell:'КОЛОДЕЦ',         // ответ морского боя (парник)
+  codeWell:'ЛОВУШКА',         // пароль узла (морской бой в парнике)
   codeAntenna:'АНТЕННА',      // код с записки у родника
   codeMatch:'51181',          // ответ задачи со спичками (508, переложить 2)
-  morseAnswer:'ПАРНИК',       // слово для морзе-тапа
+  morseAnswer:'ПОДВОДНИК',    // пароль узла (морзе-тап)
   mmSecret:'4826',            // мастермайнд (4 разные цифры)
   safeCode:'7319',            // код сейфа = цифры панорамы
   dinoGoal:15,                // очков для файрвола
@@ -170,11 +173,11 @@ function renderTerminal(){
   <h1>KRYS-OS <span style="font-size:10px;color:var(--gd)">// ${CONFIG.agent}</span></h1>
   <div class="sub">этап ${Math.min(S.stage,12)}/12 — ${STAGES[Math.min(S.stage,12)]}</div>
   <div id="log"></div>
-  <div id="bar"><input type="text" id="code" placeholder="ввести код…" autocomplete="off"><button id="send">→</button></div>
+  <div id="bar"><input type="text" id="code" placeholder="${S.stage===4&&S.mm?'4 цифры…':'ввести код…'}" autocomplete="off" ${S.stage===4&&S.mm?'inputmode="numeric" pattern="[0-9]*"':''}><button id="send">→</button></div>
   <div id="tools">
    <button id="bScan">📷 сканер</button>
    <button id="bSens">📡 сенсоры</button>
-   <button id="bRadar" class="${S.stage===7||S.stage===9?'':'ghost'}">🧭 радар</button>
+   <button id="bRadar" class="${S.stage>=4?'':'ghost'}">🧭 ${S.stage===7||S.stage===9?'радар':'компас'}</button>
    <button id="bMap">🗺 карта</button>
    ${S.stage===10?'<button id="bDino">⚡ файрвол</button>':''}
    ${S.stage===11?'<button id="bSafe">🔐 сейф</button>':''}
@@ -185,7 +188,7 @@ function renderTerminal(){
  $('#code').addEventListener('keydown',e=>{if(e.key==='Enter')$('#send').click();});
  $('#bScan').onclick=openScanner;
  $('#bSens').onclick=askSensors;
- $('#bRadar').onclick=()=>{if(S.stage===7)openRadar(CONFIG.klen,'klen');else if(S.stage===9)openRadar(CONFIG.malina,'malina');else sys('Радар не активирован.');};
+ $('#bRadar').onclick=()=>{if(S.stage===7)openRadar(CONFIG.klen,'klen');else if(S.stage===9)openRadar(CONFIG.malina,'malina');else if(S.stage>=4)openCompass();else sys('Радар не активирован.');};
  $('#bMap').onclick=openMap;
  const d=$('#bDino');if(d)d.onclick=openDino;
  const sf=$('#bSafe');if(sf)sf.onclick=openSafe;
@@ -195,8 +198,18 @@ function advance(n){S.stage=n;save();renderTerminal();}
 /* ---------- code input ---------- */
 function submitCode(v){
  if(v===CONFIG.debugPass){openDebug();return;}
+ if(S.stage===4&&S.mm){
+  addMsg('ТЫ',v);
+  if(!/^\d{4}$/.test(v)){krys('Формат: ровно 4 цифры.');return;}
+  const sec=CONFIG.mmSecret;let bulls=0,cows=0;
+  for(let i=0;i<4;i++){if(v[i]===sec[i])bulls++;else if(sec.includes(v[i]))cows++;}
+  if(bulls===4){ok();S.mm=0;save();renderTerminal();krys('Шлюз пал. Хм. Не ожидал. Ладно, грамотей, следующий рубеж — русский язык. Ударь по ударениям.');openStress();return;}
+  blip();addMsg('К.Р.Ы.С.','→ на месте: '+bulls+' · есть, но не там: '+cows);
+  S.mmT=(S.mmT||0)+1;save();
+  if(S.mmT%5===0)krys(['Пять попыток — всё мимо. Мои мышата щёлкают такое за три.','Возьми ручку и бумагу, вычёркивай цифры. Гений.','Я успел вздремнуть. Продолжай, у тебя вечность.'][((S.mmT/5)-1)%3]);
+  return;}
  addMsg('ТЫ',v);
- if(S.stage===3&&v===norm(CONFIG.codeWell)){ok();krys('Верно, дырка с водой и эхом. Я оставил там свои расчёты. Реши их — узнаешь пеленг. Только шаги считай честно.');advance(4);return;}
+ if(S.stage===3&&v===norm(CONFIG.codeWell)){ok();krys('ЛОВУШКА — мой любимый пароль. Профессиональное. Мои расчёты ищи там, где насос качает воду из-под земли. Реши их — узнаешь пеленг. И шаги считай честно.');advance(4);return;}
  if(S.stage===6&&v===norm(CONFIG.codeAntenna)){ok();krys('Код принят. Только вот беда: я обесточил антенну GPS. Почини вентили питания — все должны стать вертикальными. Тап переключает вентиль и его соседей. Ха.');openLightsOut();return;}
  if(S.stage===8&&v===norm(CONFIG.codeMatch)){ok();krys('Спички детям не игрушка, а ты справился. Ладно. Финальная аномалия — там, где летом красные ягоды. Большое поле. Иди на радар, я жду.');advance(9);return;}
  bad();
@@ -226,7 +239,7 @@ function handleQR(t){
   if(S.stage===1){ok();sys('Ключ БЕТОН/КАЧЕЛИ собран.');krys('Совместил половинки? Молодец, детский сад окончен. Теперь серьёзно: канал связи повреждён, отвечать можешь только МОРЗЕ.');openMorse();return;}
   sys('Этот ключ уже использован.');return;}
  if(t===CONFIG.qrCross){
-  if(S.stage===4){ok();sys('Узел ПЕРЕКРЁСТОК найден.');krys('Дошагал? Дальше — шлюз с кодовым замком. 4 цифры, все разные. После каждой попытки скажу: сколько цифр угадано вообще и сколько стоит на своём месте.');openMastermind();return;}
+  if(S.stage===4){ok();S.mm=1;S.mmT=0;save();renderTerminal();sys('Узел ПЕРЕКРЁСТОК найден. Обнаружен шлюз с кодовым замком.');krys('Дошагал? За листом — мой шлюз. Код: 4 ЦИФРЫ, ВСЕ РАЗНЫЕ. Попытки вводи прямо сюда, в терминал. После каждой скажу, сколько цифр стоит на своём месте и сколько угадано, но не там.');return;}
   sys('Этот ключ уже использован.');return;}
  bad();sys('Неопознанный код: '+t);
 }
@@ -238,7 +251,7 @@ const MORSE={'.-':'А','-...':'Б','.--':'В','--.':'Г','-..':'Д','.':'Е','..
 function openMorse(){
  advance(2);
  const ov=mkOv(`<h2>КАНАЛ МОРЗЕ</h2>
-  <p>ВОПРОС: где на базе огурцы прячутся от заморозков?<br>Собери слово: <b style="color:var(--warn)">корень</b> из слова «ИСПАРИНА» + <b style="color:var(--warn)">суффикс</b> из слова «ЛЕСНИК».<br>Отстучи ответ: короткий тап — точка, длинный — тире. Пауза — конец буквы.</p>
+  <p>УЗЕЛ 4 ТРЕБУЕТ ПАРОЛЬ.<br>Восстанови его: <b style="color:var(--warn)">приставка</b> из слова «ПОДОКОННИК» + <b style="color:var(--warn)">корень</b> из слова «ВОДИЧКА» + <b style="color:var(--warn)">всё, что после корня</b>, из слова «ЛЕСНИК».<br>Отстучи пароль: короткий тап — точка, длинный — тире. Пауза — конец буквы.</p>
   <div class="mbuf" id="mbuf">&nbsp;</div>
   <div id="pad">ДЕРЖИ / ОТПУСТИ</div>
   <div class="mdisp" id="mout">&nbsp;</div>
@@ -255,24 +268,8 @@ function openMorse(){
  $('#mres').onclick=()=>{buf='';out='';$('#mbuf').innerHTML='&nbsp;';$('#mout').innerHTML='&nbsp;';};
  $('#mhint').onclick=()=>$('#mtable').classList.toggle('hidden');
  $('#mchk').onclick=()=>{commit();
-  if(norm(out)===norm(CONFIG.morseAnswer)){ok();ov.remove();krys('Стучишь сносно. Следующий узел — ровно там, где твой ответ. Ищи бумагу среди ботвы.');advance(3);}
+  if(norm(out)===norm(CONFIG.morseAnswer)){ok();ov.remove();krys('Принято, ПОДВОДНИК. Хороший пароль, правда? У меня и замок на воде имеется, но об этом позже. Следующий узел — там, где огурцы не боятся заморозков. Ищи бумагу среди ботвы.');advance(3);}
   else{bad();krys('Передача не принята: «'+out+'». Стучи внятнее.');}};
-}
-/* ---------- MASTERMIND (stage 4→5) ---------- */
-function openMastermind(){
- const ov=mkOv(`<h2>ШЛЮЗ: КОДОВЫЙ ЗАМОК</h2>
-  <p>4 цифры, все разные. «НА МЕСТЕ» — цифра угадана и стоит верно. «ЕСТЬ» — цифра в коде, но не там.</p>
-  <div style="display:flex;gap:8px;margin:10px 0"><input type="text" id="mmIn" inputmode="numeric" maxlength="4" placeholder="0000" style="width:120px;text-align:center;font-size:22px;letter-spacing:6px"><button id="mmGo">ВЗЛОМ</button></div>
-  <div id="mmlist"></div>`);
- $('#mmGo').onclick=()=>{
-  const g=$('#mmIn').value;$('#mmIn').value='';
-  if(!/^\d{4}$/.test(g)){bad();return;}
-  const s=CONFIG.mmSecret;let bulls=0,cows=0;
-  for(let i=0;i<4;i++){if(g[i]===s[i])bulls++;else if(s.includes(g[i]))cows++;}
-  blip();
-  $('#mmlist').insertAdjacentHTML('afterbegin',`<div><span>${g}</span><span>на месте: ${bulls} · есть: ${cows}</span></div>`);
-  if(bulls===4){ok();setTimeout(()=>{ov.remove();krys('Шлюз пал. Хм. Ладно, грамотей, следующий рубеж — русский язык. Ударь по ударениям.');openStress();},400);}
- };
 }
 /* ---------- STRESS / ударения (stage 5→6) ---------- */
 const UD=[{w:'ЗВОНИТ',i:4},{w:'ТОРТЫ',i:1},{w:'КРАСИВЕЕ',i:4},{w:'ЩАВЕЛЬ',i:3},{w:'КАТАЛОГ',i:5},{w:'ДОСУГ',i:3}];
@@ -295,14 +292,29 @@ function openStress(){
 }
 /* ---------- LIGHTS OUT (stage 6→7) ---------- */
 function openLightsOut(){
+ function press(a,i){const r=Math.floor(i/4),c=i%4;for(let j=0;j<16;j++){if(Math.floor(j/4)===r||j%4===c)a[j]=!a[j];}}
  let st;
- do{st=Array(16).fill(true);for(let n=0;n<7;n++)press(st,Math.floor(Math.random()*16));}while(st.every(x=>x));
- function press(a,i){const r=Math.floor(i/4),c=i%4;[[r,c],[r-1,c],[r+1,c],[r,c-1],[r,c+1]].forEach(([y,x])=>{if(y>=0&&y<4&&x>=0&&x<4)a[y*4+x]=!a[y*4+x];});}
- const ov=mkOv(`<h2>ПИТАНИЕ АНТЕННЫ</h2><p>Все вентили — в вертикаль. Тап переключает вентиль и соседей по кресту.</p><div class="lo" id="lo"></div>`);
- const draw=()=>{$('#lo').innerHTML=st.map((v,i)=>`<div class="${v?'on':''}" data-i="${i}"><span></span></div>`).join('');
+ do{st=Array(16).fill(true);for(let n=0;n<5;n++)press(st,Math.floor(Math.random()*16));}while(st.every(x=>x));
+ const ov=mkOv(`<h2>ПИТАНИЕ АНТЕННЫ</h2><p>Тап переключает вентиль и ВСЕ вентили в его строке и столбце.<br>Вертикаль собрана — лампа горит. Зажги все четыре.</p>
+  <div class="lamps" id="lamps"></div><div class="lo" id="lo"></div><div class="lamps" id="srcs"></div><p id="lopow" style="color:var(--warn)"></p>`);
+ $('#srcs').innerHTML=[0,1,2,3].map(()=>'<div class="src">⚡</div>').join('');
+ const draw=()=>{
+  $('#lo').innerHTML=st.map((v,i)=>`<div class="${v?'on':''}" data-i="${i}"><span></span></div>`).join('');
+  const cols=[0,1,2,3].map(c=>st[c]&&st[c+4]&&st[c+8]&&st[c+12]);
+  $('#lamps').innerHTML=cols.map(l=>`<div class="lamp ${l?'lit':''}"></div>`).join('');
+  $('#lopow').textContent='питание: '+cols.filter(Boolean).length+' / 4';
   $('#lo').querySelectorAll('div[data-i]').forEach(d=>d.onclick=()=>{blip();press(st,+d.dataset.i);draw();
-   if(st.every(x=>x)){ok();setTimeout(()=>{ov.remove();krys('Антенна в строю. Лови сигнал: я пометил одно СТАРОЕ дерево. Радар доведёт. Открывай 🧭 и иди по стрелке.');advance(7);},400);}});};
+   if(st.every(x=>x)){ok();setTimeout(()=>{ov.remove();krys('Все лампы горят, антенна в строю. Лови сигнал: я пометил одно СТАРОЕ дерево. Радар доведёт. Открывай 🧭 и иди по стрелке.');advance(7);},400);}});};
  draw();
+}
+/* ---------- COMPASS ---------- */
+function openCompass(){
+ askSensors();
+ const ov=mkOv(`<h2>КОМПАС</h2><div class="big" id="chead" style="font-size:60px;margin:18px 0">—</div>
+  <p>Твой курс (азимут) в градусах.<br>0 — север · 90 — восток · 180 — юг · 270 — запад.<br>Поворачивайся, пока сверху не будет нужное число, и иди прямо, считая шаги.</p>
+  <p style="color:var(--gd);font-size:11px">Если «—» не меняется — разреши доступ к датчикам движения или открой штатное приложение «Компас».</p>`);
+ const tick=()=>{if(!document.body.contains(ov))return;$('#chead').textContent=heading!=null?Math.round(heading)+'°':'—';setTimeout(tick,200);};
+ tick();
 }
 /* ---------- GEO / RADAR ---------- */
 let watchId=null,lastPos=null,heading=null;
@@ -321,7 +333,7 @@ function distBear(a,b){const R=6371000,r=x=>x*Math.PI/180;const φ1=r(a.latitude
  return{d,b:(Math.atan2(y,x)*180/Math.PI+360)%360};}
 function openRadar(target,kind){
  startWatch();
- const ov=mkOv(`<h2>РАДАР</h2><div id="radarScope"><div id="needle"><span>▲</span></div></div><div id="dist">—</div><p id="rmsg">Жду сигнал GPS… (нажми «сенсоры», если не просил разрешение)</p><div id="rbtn"></div>`);
+ const ov=mkOv(`<h2>РАДАР</h2><div id="radarScope"><svg id="needle" viewBox="0 0 60 140" width="60" height="140"><polygon points="30,4 44,112 30,88 16,112" fill="#39ff7a"/><circle cx="30" cy="7" r="5" fill="#ffcc44"/></svg></div><div id="dist">—</div><p id="rmsg">Жду сигнал GPS… (нажми «сенсоры», если не просил разрешение)</p><div id="rbtn"></div>`);
  let done=false;
  const tick=()=>{if(!document.body.contains(ov))return;
   const p=pos();
@@ -448,8 +460,9 @@ function openFinale(){
   <path d="M96 148 Q110 158 124 148" stroke="#39ff7a" fill="none" stroke-width="2"/>
  </svg>
  <p class="big">К.Р.Ы.С.</p>
- <p>«Крайне Разумная Ыскусственная Система»<br>Особые приметы: усы, тёмные очки, наглость.<br>Сообщники: два усатых киллера (отрицают всё).</p>
+ <p>«Крайне Разумная Ыскусственная Система»<br>Особые приметы: усы, тёмные очки, наглость.<br>Действовал в одиночку. Два пушистых охотника к делу непричастны.</p>
  <p style="color:var(--warn);font-size:15px">КОНФИСКОВАННАЯ ПОСЫЛКА ОБНАРУЖЕНА:<br><span class="big">▶ ЧЕРДАК ◀</span></p>
+ <p style="max-width:420px">«Пора мне валить с этой базы — до утра не доживу: эти двое уже дышат мне в хвост. Прощай, агент. Достойная была игра.»<br>— К.Р.Ы.С.</p>
  <p>Забирай, агент. Ты победил.<br><b style="color:var(--g)">С ДНЁМ РОЖДЕНИЯ! 🎂</b></p>`,false);
  for(let i=0;i<8;i++)setTimeout(()=>snd(400+Math.random()*800,.15,'sine',.06),i*130);
 }
@@ -460,7 +473,7 @@ function openMap(){
 /* ---------- DEBUG ---------- */
 function openDebug(){
  closeOv();
- const HINTS={1:'жду скан SWING (кнопка ниже или сложенный QR)',2:'мини-игра МОРЗЕ',3:'жду код КОЛОДЕЦ',4:'жду скан CROSSROAD (кнопка ниже)',5:'мини-игра УДАРЕНИЯ',6:'жду код АНТЕННА',7:'радар активен → цель: клён',8:'жду код со спичек (11)',9:'радар активен → цель: малинник',10:'кнопка ⚡ файрвол в терминале',11:'кнопка 🔐 сейф в терминале',12:'финал — кнопка 🎁'};
+ const HINTS={1:'жду скан SWING (кнопка ниже или сложенный QR)',2:'мини-игра МОРЗЕ',3:'жду код ЛОВУШКА',4:'жду скан CROSSROAD; после скана — код-замок прямо в чате',5:'мини-игра УДАРЕНИЯ',6:'жду код АНТЕННА',7:'радар активен → цель: клён',8:'жду код со спичек (11)',9:'радар активен → цель: малинник',10:'кнопка ⚡ файрвол в терминале',11:'кнопка 🔐 сейф в терминале',12:'финал — кнопка 🎁'};
  const ov=mkOv(`<h2 style="color:var(--err)">DEBUG // РОДИТЕЛЬСКИЙ РЕЖИМ</h2><div class="dbgpanel" style="width:100%;max-width:340px">
   <div style="font-size:10px;color:var(--gd);margin:4px 0">ПЕРЕЙТИ НА ЭТАП (тап по строке):</div>
   <div id="dstages">${STAGES.map((t,i)=>`<button data-n="${i}" style="text-align:left;${i===S.stage?'border-color:var(--warn);color:var(--warn)':''}">${i===S.stage?'▶':''} ${i}: ${t}</button>`).join('')}</div>
@@ -485,7 +498,7 @@ function openDebug(){
  $('#dgps0').onclick=()=>{fakeGPS=null;sys('DEBUG: GPS реальный');};
  $('#dsolve').onclick=()=>{ov.remove();
   if(S.stage===2){closeOv();krys('[debug] морзе пройдено');advance(3);}
-  else if(S.stage===4){closeOv();openStress();}
+  else if(S.stage===4){S.mm=0;save();closeOv();openStress();}
   else if(S.stage===5){closeOv();advance(6);}
   else if(S.stage===6){closeOv();advance(7);}
   else if(S.stage===9){closeOv();krys('[debug] панорама пройдена');advance(10);}
