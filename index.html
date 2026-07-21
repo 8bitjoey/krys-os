@@ -505,7 +505,7 @@ function openDebug(){
   else if(S.stage===10){closeOv();advance(11);}
   else if(S.stage===11){closeOv();advance(12);openFinale();}
   else sys('DEBUG: на этом этапе нет мини-игры (двигай этап).');};
- $('#dans').onclick=()=>{$('#dansbox').innerHTML=`пароль: ${CONFIG.password}<br>морзе: ${CONFIG.morseAnswer}<br>морской бой: ${CONFIG.codeWell}<br>азимут: 240°, 35 шагов<br>мастермайнд: ${CONFIG.mmSecret}<br>ударения: РОДНИК<br>код родника: ${CONFIG.codeAntenna}<br>спички: 508 → ${CONFIG.codeMatch} (верх и низ нуля → единица после 8)<br>сейф/панорама: ${CONFIG.safeCode}`;};
+ $('#dans').onclick=()=>{$('#dansbox').innerHTML=`пароль: ${CONFIG.password}<br>морзе: ${CONFIG.morseAnswer}<br>морской бой: ${CONFIG.codeWell}<br>перекрёсток: кроссворд → ВОСТОК, 30 шагов<br>мастермайнд: ${CONFIG.mmSecret}<br>ударения: РОДНИК<br>код родника: ${CONFIG.codeAntenna}<br>спички: 508 → ${CONFIG.codeMatch} (верх и низ нуля → единица после 8)<br>сейф/панорама: ${CONFIG.safeCode}`;};
  $('#dreset').onclick=()=>{localStorage.removeItem('krysS');location.reload();};
 }
 /* ---------- boot ---------- */
